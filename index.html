@@ -240,16 +240,25 @@ const fmt=v=>"R$ "+Number(v).toFixed(2).replace('.',',');
 function showOverlay(msg="Carregando..."){overlay.style.display="flex";overlay.querySelector("p").textContent=msg;}
 function hideOverlay(){overlay.style.display="none";}
 
-function atualizarIndices(){
-  const aprovadas = apostas.filter(a => a.status === "APROVADO");
+function atualizarIndices() {
+  // Filtra apenas as apostas aprovadas
+  const aprovadas = apostas.filter(a => a.status && a.status.toUpperCase() === "APROVADO");
+  
+  // Soma o total de cotas aprovadas
   const totalApostas = aprovadas.length;
-  const valorTotal = aprovadas.reduce((t, a) => t + a.qtd * PRECO, 0);
-
+  const valorTotal = aprovadas.reduce((t, a) => t + (Number(a.qtd) * PRECO), 0);
+  
+  // Calcula prêmios e lucro
+  const premio = valorTotal * 0.75;
+  const lucro = valorTotal * 0.25;
+  
+  // Atualiza os cards do topo
   document.getElementById("totalApostas").textContent = totalApostas;
   document.getElementById("valorArrecadado").textContent = fmt(valorTotal);
-  document.getElementById("premio").textContent = fmt(valorTotal * 0.75);
-  document.getElementById("lucro").textContent = fmt(valorTotal * 0.25);
+  document.getElementById("premio").textContent = fmt(premio);
+  document.getElementById("lucro").textContent = fmt(lucro);
 }
+
 
 
 /* ===== RESULTADOS ===== */
