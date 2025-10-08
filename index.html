@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Painel de Apostas — Quem Matou Odete Roitman?</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -24,51 +24,109 @@ header{
 header h1{color:var(--amber);margin:0;font-size:28px}
 header p{color:var(--muted);margin:6px 0 0}
 main{padding:20px;max-width:1200px;margin:auto}
+
+/* ====== CARDS ====== */
 .stats{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:16px;margin-bottom:30px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+  margin-bottom:30px;
 }
 .stat{
-  background:var(--card);padding:16px;border-radius:14px;
-  text-align:center;border:1px solid var(--line);
+  background:var(--card);
+  padding:16px;
+  border-radius:14px;
+  text-align:center;
+  border:1px solid var(--line);
+  box-shadow:0 4px 10px rgba(0,0,0,0.25);
 }
-.stat h3{margin:0;color:var(--muted);font-size:14px}
-.stat .val{font-size:24px;font-weight:800;margin-top:8px;color:var(--amber)}
+.stat h3{margin:0;color:var(--muted);font-size:13px}
+.stat .val{font-size:22px;font-weight:800;margin-top:8px;color:var(--amber)}
+
+/* ====== TABELA ====== */
 .table-box{
-  background:var(--card);border-radius:14px;padding:16px;
-  border:1px solid var(--line);overflow:auto;
+  background:var(--card);
+  border-radius:14px;
+  padding:16px;
+  border:1px solid var(--line);
+  overflow-x:auto; /* ✅ rolagem horizontal no modo planilha */
+  -webkit-overflow-scrolling:touch;
 }
-table{width:100%;border-collapse:collapse;color:var(--ink)}
-th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
-th{color:var(--muted);font-size:13px;text-transform:uppercase}
+.table-box table{
+  width:800px; /* largura fixa pra simular planilha */
+  border-collapse:collapse;
+  color:var(--ink);
+  font-size:14px;
+}
+th,td{
+  padding:10px 8px;
+  border-bottom:1px solid var(--line);
+  text-align:left;
+  white-space:nowrap;
+}
+th{
+  color:var(--muted);
+  font-size:13px;
+  text-transform:uppercase;
+  background:#111827;
+  position:sticky;
+  top:0;
+  z-index:1;
+}
 td small{color:var(--muted);font-size:12px}
 .aprovado{
-  background:var(--green);color:#fff;border:none;
-  padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;
+  background:var(--green);
+  color:#fff;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
 }
-.aprovado.done{background:#1e293b;color:var(--muted);cursor:default}
+.aprovado.done{
+  background:#1e293b;
+  color:var(--muted);
+  cursor:default;
+}
+
+/* ====== GRÁFICO ====== */
 .chart-box{
-  background:var(--card);padding:16px;border-radius:14px;
-  border:1px solid var(--line);margin-top:30px;
+  background:var(--card);
+  padding:16px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  margin-top:30px;
 }
-@media(max-width:768px){
-  header h1{font-size:22px}
-  .stat .val{font-size:20px}
-  th,td{font-size:13px}
-}
-/* Overlay */
+
+/* ====== OVERLAY ====== */
 .overlay{
-  display:none;position:fixed;inset:0;
+  display:none;
+  position:fixed;
+  inset:0;
   background:rgba(0,0,0,0.85);
-  z-index:9999;justify-content:center;align-items:center;flex-direction:column;
+  z-index:9999;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
 }
 .spinner{
-  width:70px;height:70px;border:6px solid var(--line);
-  border-top-color:var(--amber);border-radius:50%;
+  width:70px;height:70px;
+  border:6px solid var(--line);
+  border-top-color:var(--amber);
+  border-radius:50%;
   animation:spin 1s linear infinite;
 }
 @keyframes spin{100%{transform:rotate(360deg)}}
 .overlay p{margin-top:18px;color:var(--muted);font-size:16px}
+
+/* ====== AJUSTE MOBILE ====== */
+@media(max-width:768px){
+  header h1{font-size:22px}
+  .stats{grid-template-columns:repeat(2,1fr);} /* ✅ dois cards por linha */
+  .stat .val{font-size:20px}
+  th,td{font-size:12px}
+  main{padding:12px}
+}
 </style>
 </head>
 <body>
@@ -81,7 +139,9 @@ td small{color:var(--muted);font-size:12px}
   <h1>Quem Matou Odete Roitman?</h1>
   <p>Painel de Controle e Análise de Apostas</p>
 </header>
+
 <main>
+  <!-- ===== INDICADORES ===== -->
   <section class="stats">
     <div class="stat"><h3>Total de Apostas</h3><div class="val" id="totalApostas">0</div></div>
     <div class="stat"><h3>Valor Arrecadado</h3><div class="val" id="valorArrecadado">R$ 0,00</div></div>
@@ -89,18 +149,25 @@ td small{color:var(--muted);font-size:12px}
     <div class="stat"><h3>Lucro (25%)</h3><div class="val" id="lucro">R$ 0,00</div></div>
   </section>
 
+  <!-- ===== TABELA ===== -->
   <section class="table-box">
     <h2 style="color:var(--amber);margin-top:0;">📋 Apostas Registradas</h2>
     <table id="tabelaApostas">
       <thead>
         <tr>
-          <th>Nome</th><th>Suspeito</th><th>Cotas</th><th>Valor</th><th>Status</th><th>Ação</th>
+          <th>Nome</th>
+          <th>Suspeito</th>
+          <th>Cotas</th>
+          <th>Valor</th>
+          <th>Status</th>
+          <th>Ação</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </section>
 
+  <!-- ===== GRÁFICO ===== -->
   <section class="chart-box">
     <h2 style="color:var(--amber);margin-top:0;">📊 Apostas por Suspeito</h2>
     <canvas id="chartApostas" height="120"></canvas>
@@ -147,10 +214,13 @@ function renderTabela(){
       <td>${a.qtd}</td>
       <td>${fmt(a.qtd*PRECO)}</td>
       <td>${a.status}</td>
-      <td><button class="aprovado ${a.status==='APROVADO'?'done':''}" data-i="${i}">${a.status==='APROVADO'?'✔️':'Aprovar'}</button></td>
+      <td><button class="aprovado ${a.status==='APROVADO'?'done':''}" data-i="${i}">
+        ${a.status==='APROVADO'?'✔️':'Aprovar'}
+      </button></td>
     `;
     tbody.appendChild(tr);
   });
+
   document.querySelectorAll(".aprovado").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const i=btn.dataset.i;
@@ -160,7 +230,11 @@ function renderTabela(){
       btn.textContent='✔️';
       btn.classList.add("done");
       atualizarIndices();renderGrafico();
-      await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({...apostas[i],action:"atualizarStatus"})});
+      await fetch(SCRIPT_URL,{
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({...apostas[i],action:"atualizarStatus"})
+      });
       hideOverlay();
     });
   });
@@ -175,7 +249,11 @@ function renderGrafico(){
   const labels=Object.keys(contagem);
   const data=Object.values(contagem);
   if(chart)chart.destroy();
-  chart=new Chart(ctx,{type:"bar",data:{labels,datasets:[{data,backgroundColor:"#f59e0b"}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+  chart=new Chart(ctx,{
+    type:"bar",
+    data:{labels,datasets:[{data,backgroundColor:"#f59e0b"}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+  });
 }
 
 // Carregar dados
@@ -188,11 +266,8 @@ async function carregar(){
     atualizarIndices();
     renderTabela();
     renderGrafico();
-  }catch(e){
-    console.error(e);
-  }finally{
-    hideOverlay();
-  }
+  }catch(e){console.error(e);}
+  finally{hideOverlay();}
 }
 carregar();
 </script>
