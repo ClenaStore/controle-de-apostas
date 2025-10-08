@@ -55,18 +55,91 @@ td small{color:var(--muted);font-size:12px}
 
 /* ===== RESULTADOS ===== */
 .resultados{
-  margin-top:40px;background:linear-gradient(135deg,var(--blue),var(--teal));
-  border-radius:14px;padding:24px;color:#fff;box-shadow:0 8px 16px rgba(0,0,0,0.3);
+  margin-top:40px;
+  background:linear-gradient(145deg,var(--blue),var(--teal));
+  border-radius:18px;
+  padding:20px;
+  color:#fff;
+  box-shadow:0 8px 20px rgba(0,0,0,0.35);
+  position:relative;
+  overflow:hidden;
 }
-.resultados h2{margin-top:0;font-size:22px;text-align:center;}
-.resultados table{width:100%;border-collapse:collapse;margin-top:12px;color:#fff;}
-.resultados th, .resultados td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.2);text-align:left;}
-.resultados th{font-size:13px;text-transform:uppercase;color:#dbeafe;}
+.resultados::before{
+  content:"";
+  position:absolute;inset:0;
+  background:radial-gradient(circle at top left,rgba(255,255,255,0.15),transparent 70%);
+  z-index:0;
+}
+.resultados h2{
+  margin-top:0;
+  font-size:22px;
+  text-align:center;
+  position:relative;
+  z-index:1;
+}
+.resumoValores{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  margin-top:18px;
+  position:relative;
+  z-index:1;
+}
+.resumoValores div{
+  width:100%;
+  max-width:380px;
+  background:rgba(0,0,0,0.3);
+  padding:10px 16px;
+  border-radius:10px;
+  font-weight:600;
+  text-align:center;
+  box-shadow:0 3px 8px rgba(0,0,0,0.2);
+}
+.resultados table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:18px;
+  color:#fff;
+  font-size:14px;
+  position:relative;
+  z-index:1;
+}
+.resultados th,.resultados td{
+  padding:8px;
+  border-bottom:1px solid rgba(255,255,255,0.2);
+  text-align:left;
+  white-space:nowrap;
+}
+.resultados th{
+  font-size:12px;
+  text-transform:uppercase;
+  color:#dbeafe;
+}
 .resultados td:last-child{text-align:right;}
-.resumoValores{display:flex;justify-content:space-around;margin-top:18px;flex-wrap:wrap;gap:16px;}
-.resumoValores div{background:rgba(0,0,0,0.25);padding:10px 16px;border-radius:10px;font-weight:600;text-align:center;}
-.seletor-vencedor{margin-top:25px;text-align:center;}
-.seletor-vencedor select{background:#fff;color:#000;padding:8px 12px;border-radius:8px;border:none;font-weight:600;cursor:pointer;}
+.atualizacao{
+  text-align:center;
+  color:#dbeafe;
+  font-size:13px;
+  margin-top:12px;
+  font-style:italic;
+  opacity:0.8;
+}
+@media(max-width:768px){
+  .resultados{
+    padding:16px 10px;
+  }
+  .resumoValores div{
+    font-size:13px;
+    padding:8px;
+  }
+  .resultados table{
+    font-size:12px;
+    display:block;
+    overflow-x:auto;
+  }
+}
+
 
 /* ===== OVERLAY ===== */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;
@@ -201,10 +274,20 @@ function renderResultados(ganhadores){
     tbody.appendChild(tr);
   });
 
-  document.getElementById("resTotal").textContent=fmt(total);
-  document.getElementById("resRepasses").textContent=fmt(premio);
-  document.getElementById("resLucro").textContent=fmt(total*0.25);
-  document.getElementById("resultadoFinal").style.display="block";
+  document.getElementById("resTotal").textContent = fmt(total);
+  document.getElementById("resRepasses").textContent = fmt(premio);
+  document.getElementById("resLucro").textContent = fmt(total * 0.25);
+  document.getElementById("resultadoFinal").style.display = "block";
+
+  // 🕒 Adiciona hora da última atualização
+  const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  let elHora = document.querySelector(".atualizacao");
+  if (!elHora) {
+    elHora = document.createElement("div");
+    elHora.className = "atualizacao";
+    document.getElementById("resultadoFinal").appendChild(elHora);
+  }
+  elHora.textContent = `⏰ Última atualização: ${hora}`;
 }
 
 /* ===== TABELA ===== */
