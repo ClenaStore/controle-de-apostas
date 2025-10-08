@@ -53,6 +53,19 @@ td small{color:var(--muted);font-size:12px}
 /* ===== GRAFICO ===== */
 .chart-box{background:var(--card);padding:16px;border-radius:14px;border:1px solid var(--line);margin-top:30px;}
 
+/* ===== RESULTADOS ===== */
+.resultados{
+  margin-top:40px;background:linear-gradient(135deg,var(--blue),var(--teal));
+  border-radius:14px;padding:24px;color:#fff;box-shadow:0 8px 16px rgba(0,0,0,0.3);
+}
+.resultados h2{margin-top:0;font-size:22px;text-align:center;}
+.resultados table{width:100%;border-collapse:collapse;margin-top:12px;color:#fff;}
+.resultados th, .resultados td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.2);text-align:left;}
+.resultados th{font-size:13px;text-transform:uppercase;color:#dbeafe;}
+.resultados td:last-child{text-align:right;}
+.resumoValores{display:flex;justify-content:space-around;margin-top:18px;flex-wrap:wrap;gap:16px;}
+.resumoValores div{background:rgba(0,0,0,0.25);padding:10px 16px;border-radius:10px;font-weight:600;text-align:center;}
+
 /* ===== OVERLAY ===== */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;
   justify-content:center;align-items:center;flex-direction:column;}
@@ -113,6 +126,29 @@ td small{color:var(--muted);font-size:12px}
     <h2 style="color:var(--amber);margin-top:0;">Apostas por Suspeito</h2>
     <canvas id="chartApostas" height="120"></canvas>
   </section>
+
+  <!-- RESULTADOS -->
+  <section class="resultados" id="resultadoFinal" style="display:none;">
+    <h2>💰 Resultado Final e Repasses</h2>
+    <div class="resumoValores">
+      <div>Total Arrecadado: <span id="resTotal">R$ 0,00</span></div>
+      <div>Valor para Repasses (75%): <span id="resRepasses">R$ 0,00</span></div>
+      <div>Lucro: <span id="resLucro">R$ 0,00</span></div>
+    </div>
+
+    <table id="tabelaGanhadores">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Cotas</th>
+          <th>Valor Investido</th>
+          <th>Valor a Receber</th>
+          <th>% Retorno</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 </main>
 
 <script>
@@ -133,6 +169,35 @@ function atualizarIndices(){
   document.getElementById("valorArrecadado").textContent=fmt(valorTotal);
   document.getElementById("premio").textContent=fmt(valorTotal*0.75);
   document.getElementById("lucro").textContent=fmt(valorTotal*0.25);
+}
+
+/* ===== RESULTADOS ===== */
+function renderResultados(ganhadores,suspeitoCerto){
+  const total=apostas.reduce((t,a)=>t+a.qtd*PRECO,0);
+  const premio=total*0.75;
+  const cotasTotais=ganhadores.reduce((s,g)=>s+g.qtd,0);
+  const tbody=document.querySelector("#tabelaGanhadores tbody");
+  tbody.innerHTML="";
+
+  ganhadores.forEach(g=>{
+    const valorInvest=g.qtd*PRECO;
+    const valorReceber=(g.qtd/cotasTotais)*premio;
+    const retorno=((valorReceber/valorInvest)-1)*100;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${g.nome}</td>
+      <td>${g.qtd}</td>
+      <td>${fmt(valorInvest)}</td>
+      <td>${fmt(valorReceber)}</td>
+      <td>${retorno.toFixed(1)}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("resTotal").textContent=fmt(total);
+  document.getElementById("resRepasses").textContent=fmt(premio);
+  document.getElementById("resLucro").textContent=fmt(total*0.25);
+  document.getElementById("resultadoFinal").style.display="block";
 }
 
 /* ===== TABELA ===== */
@@ -157,12 +222,10 @@ function renderTabela(){
         <button class="btn aprovar ${a.status==='APROVADO'?'done':''}" data-i="${i}">
           ${a.status==='APROVADO'?'✔️':'Aprovar'}
         </button>
-        ${a.status!=='APROVADO'?`<button class="btn reenviar" data-i="${i}">📧 Reenviar</button>`:''}
       </td>`;
     tbody.appendChild(tr);
   });
 
-  /* === Aprovar === */
   document.querySelectorAll(".aprovar").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const i=btn.dataset.i;
@@ -178,27 +241,6 @@ function renderTabela(){
         body:JSON.stringify({...apostas[i],action:"atualizarstatus"})
       });
       hideOverlay();
-    });
-  });
-
-  /* === Reenviar === */
-  document.querySelectorAll(".reenviar").forEach(btn=>{
-    btn.addEventListener("click",async()=>{
-      const i=btn.dataset.i;
-      const aposta=apostas[i];
-      showOverlay("Reenviando e-mail...");
-      const res=await fetch(SCRIPT_URL,{
-        method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({...aposta,action:"reenviaremail"})
-      });
-      hideOverlay();
-      if(res.ok){
-        btn.textContent='📨 Enviado';
-        btn.classList.add('sent');
-        btn.disabled=true;
-        alert("E-mail reenviado para " + aposta.email);
-      }else alert("Falha ao reenviar o e-mail.");
     });
   });
 }
@@ -217,6 +259,12 @@ function renderGrafico(){
     data:{labels,datasets:[{data,backgroundColor:"#f59e0b"}]},
     options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
   });
+
+  // ===== Exemplo: Definir ganhadores (simulado)
+  // substitua 'Maria' pelo suspeito certo
+  const suspeitoCerto="Maria";
+  const ganhadores=apostas.filter(a=>a.foto===suspeitoCerto && a.status==="APROVADO");
+  if(ganhadores.length>0) renderResultados(ganhadores,suspeitoCerto);
 }
 
 /* ===== CARREGAR ===== */
