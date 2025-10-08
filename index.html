@@ -56,9 +56,27 @@ td small{color:var(--muted);font-size:12px}
   .stat .val{font-size:20px}
   th,td{font-size:13px}
 }
+/* Overlay */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.85);
+  z-index:9999;justify-content:center;align-items:center;flex-direction:column;
+}
+.spinner{
+  width:70px;height:70px;border:6px solid var(--line);
+  border-top-color:var(--amber);border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{100%{transform:rotate(360deg)}}
+.overlay p{margin-top:18px;color:var(--muted);font-size:16px}
 </style>
 </head>
 <body>
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <p>Carregando dados...</p>
+</div>
+
 <header>
   <h1>Quem Matou Odete Roitman?</h1>
   <p>Painel de Controle e Análise de Apostas</p>
@@ -90,27 +108,34 @@ td small{color:var(--muted);font-size:12px}
 </main>
 
 <script>
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwo8IXa6dMsFHzMrSU7GmQIAitbyFpUiSkFsID667L1y60viUOS0ikQ8QRk95jDhJAJ/exec";
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxaTo1yxg3EoyDoQS0Vx8JnjCgGvnwJb7PCRdQ2f1nFgGQgznT1voOriPSJOaXWHWwI/exec";
 const PRECO=5;
 let apostas=[];
+const overlay=document.getElementById("overlay");
 
-// Função para formatar valores monetários
+// Mostrar e ocultar overlay
+function showOverlay(msg="Carregando dados..."){
+  overlay.style.display="flex";
+  overlay.querySelector("p").textContent=msg;
+}
+function hideOverlay(){overlay.style.display="none";}
+
+// Formatação
 const fmt=v=>"R$ "+Number(v).toFixed(2).replace('.',',');
 
-// Atualiza os indicadores de topo
+// Atualizar indicadores
 function atualizarIndices(){
   const totalApostas=apostas.length;
   const valorTotal=apostas.reduce((t,a)=>t+a.qtd*PRECO,0);
-  const premio=valorTotal*0.75; // 75% do total é prêmio
-  const lucro=valorTotal*0.25;  // 25% é lucro
-
+  const premio=valorTotal*0.75;
+  const lucro=valorTotal*0.25;
   document.getElementById("totalApostas").textContent=totalApostas;
   document.getElementById("valorArrecadado").textContent=fmt(valorTotal);
   document.getElementById("premio").textContent=fmt(premio);
   document.getElementById("lucro").textContent=fmt(lucro);
 }
 
-// Renderiza tabela
+// Tabela
 function renderTabela(){
   const tbody=document.querySelector("#tabelaApostas tbody");
   tbody.innerHTML="";
@@ -130,53 +155,43 @@ function renderTabela(){
     btn.addEventListener("click",async()=>{
       const i=btn.dataset.i;
       if(apostas[i].status==='APROVADO')return;
+      showOverlay("Aprovando aposta...");
       apostas[i].status='APROVADO';
       btn.textContent='✔️';
       btn.classList.add("done");
       atualizarIndices();renderGrafico();
-      // Atualiza planilha
-      fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({...apostas[i],action:"atualizarStatus"})});
+      await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({...apostas[i],action:"atualizarStatus"})});
+      hideOverlay();
     });
   });
 }
 
-// Renderiza gráfico de apostas
+// Gráfico
 let chart;
 function renderGrafico(){
   const ctx=document.getElementById("chartApostas").getContext("2d");
   const contagem={};
-  apostas.forEach(a=>{
-    contagem[a.foto]=(contagem[a.foto]||0)+a.qtd;
-  });
+  apostas.forEach(a=>{contagem[a.foto]=(contagem[a.foto]||0)+a.qtd;});
   const labels=Object.keys(contagem);
   const data=Object.values(contagem);
   if(chart)chart.destroy();
-  chart=new Chart(ctx,{
-    type:"bar",
-    data:{labels,datasets:[{label:"Cotas Apostadas",data,borderWidth:1,backgroundColor:"#f59e0b"}]},
-    options:{
-      plugins:{legend:{display:false}},
-      scales:{y:{beginAtZero:true,ticks:{color:var('--ink')},grid:{color:var('--line')}},x:{ticks:{color:var('--muted')}}}
-    }
-  });
+  chart=new Chart(ctx,{type:"bar",data:{labels,datasets:[{data,backgroundColor:"#f59e0b"}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
 }
 
-// Carrega apostas da planilha
+// Carregar dados
 async function carregar(){
+  showOverlay();
   try{
     const r=await fetch(`${SCRIPT_URL}?action=listar`,{cache:"no-store"});
     const j=await r.json();
-    apostas=j.map(l=>({
-      nome:l.nome,
-      foto:l.foto,
-      qtd:Number(l.qtd),
-      status:l.status
-    }));
+    apostas=j.map(l=>({nome:l.nome,foto:l.foto,qtd:Number(l.qtd),status:l.status}));
     atualizarIndices();
     renderTabela();
     renderGrafico();
   }catch(e){
     console.error(e);
+  }finally{
+    hideOverlay();
   }
 }
 carregar();
