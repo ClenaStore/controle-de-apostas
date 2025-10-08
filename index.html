@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Quem Matou Odete Roitman? — Bolão da Sorte</title>
+<title>Painel de Apostas — Quem Matou Odete Roitman?</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
@@ -15,6 +15,7 @@
 body{
   margin:0;font-family:Inter,system-ui;
   background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;font-smooth:always;
 }
 header{
   text-align:center;padding:20px;
@@ -40,6 +41,7 @@ main{padding:20px;max-width:1200px;margin:auto}
 table{width:100%;border-collapse:collapse;color:var(--ink)}
 th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
 th{color:var(--muted);font-size:13px;text-transform:uppercase}
+td small{color:var(--muted);font-size:12px}
 .aprovado{
   background:var(--green);color:#fff;border:none;
   padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;
@@ -48,6 +50,11 @@ th{color:var(--muted);font-size:13px;text-transform:uppercase}
 .chart-box{
   background:var(--card);padding:16px;border-radius:14px;
   border:1px solid var(--line);margin-top:30px;
+}
+@media(max-width:768px){
+  header h1{font-size:22px}
+  .stat .val{font-size:20px}
+  th,td{font-size:13px}
 }
 /* Overlay */
 .overlay{
@@ -62,45 +69,12 @@ th{color:var(--muted);font-size:13px;text-transform:uppercase}
 }
 @keyframes spin{100%{transform:rotate(360deg)}}
 .overlay p{margin-top:18px;color:var(--muted);font-size:16px}
-/* Pop-up de resumo */
-.popup{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.7);z-index:9998;
-  justify-content:center;align-items:center;
-}
-.popup-content{
-  background:var(--card);padding:24px;border-radius:16px;
-  border:1px solid var(--line);width:90%;max-width:380px;
-  text-align:center;box-shadow:0 0 20px rgba(0,0,0,0.5);
-}
-.popup-content h2{color:var(--amber);margin-top:0}
-.popup-content p{color:var(--muted);margin:8px 0;font-size:15px}
-.pix{
-  background:var(--line);padding:10px;border-radius:8px;
-  margin-top:10px;color:var(--amber);font-weight:600;
-  user-select:all;
-}
-.close-btn{
-  background:var(--red);border:none;color:white;
-  padding:8px 14px;border-radius:8px;cursor:pointer;
-  margin-top:16px;
-}
 </style>
 </head>
 <body>
 <div class="overlay" id="overlay">
   <div class="spinner"></div>
   <p>Carregando dados...</p>
-</div>
-
-<!-- Pop-up -->
-<div class="popup" id="popup">
-  <div class="popup-content">
-    <h2>🎉 Confirmação da Aposta</h2>
-    <p id="resumo"></p>
-    <div class="pix">Chave PIX: <span id="pixChave">pix@seudominio.com</span></div>
-    <button class="close-btn" onclick="fecharPopup()">Fechar</button>
-  </div>
 </div>
 
 <header>
@@ -136,12 +110,8 @@ th{color:var(--muted);font-size:13px;text-transform:uppercase}
 <script>
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxuhdz713JsQyeMj0gNmJRlhiB8VCdCSgKmeb_EdwHbpyPXjeQGpK41Es5nzeCe9B1T/exec";
 const PRECO=5;
-const PIX_CHAVE="pix@seudominio.com"; // 🔁 altere para sua chave PIX
 let apostas=[];
 const overlay=document.getElementById("overlay");
-const popup=document.getElementById("popup");
-const resumoEl=document.getElementById("resumo");
-const pixEl=document.getElementById("pixChave");
 
 // Mostrar e ocultar overlay
 function showOverlay(msg="Carregando dados..."){
@@ -149,20 +119,6 @@ function showOverlay(msg="Carregando dados..."){
   overlay.querySelector("p").textContent=msg;
 }
 function hideOverlay(){overlay.style.display="none";}
-
-// Mostrar/fechar popup
-function abrirPopup(a){
-  resumoEl.innerHTML=`
-    <strong>${a.nome}</strong><br>
-    Suspeito: <b>${a.foto}</b><br>
-    Cotas: <b>${a.qtd}</b><br>
-    Valor total: <b>R$ ${(a.qtd*PRECO).toFixed(2).replace('.',',')}</b><br><br>
-    Após o pagamento via PIX, sua aposta será confirmada.
-  `;
-  pixEl.textContent=PIX_CHAVE;
-  popup.style.display="flex";
-}
-function fecharPopup(){popup.style.display="none";}
 
 // Formatação
 const fmt=v=>"R$ "+Number(v).toFixed(2).replace('.',',');
@@ -191,37 +147,20 @@ function renderTabela(){
       <td>${a.qtd}</td>
       <td>${fmt(a.qtd*PRECO)}</td>
       <td>${a.status}</td>
-      <td>
-        <button class="aprovado ${a.status==='APROVADO'?'done':''}" data-i="${i}">
-          ${a.status==='APROVADO'?'✔️':'Confirmar participação'}
-        </button>
-      </td>
+      <td><button class="aprovado ${a.status==='APROVADO'?'done':''}" data-i="${i}">${a.status==='APROVADO'?'✔️':'Aprovar'}</button></td>
     `;
     tbody.appendChild(tr);
   });
-
   document.querySelectorAll(".aprovado").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const i=btn.dataset.i;
-      const aposta=apostas[i];
-      if(aposta.status==='APROVADO') return;
-
-      // Mostra pop-up antes de aprovar
-      abrirPopup(aposta);
-
-      // Simula envio (mantém lógica atual)
-      showOverlay("Registrando participação...");
-      aposta.status='APROVADO';
+      if(apostas[i].status==='APROVADO')return;
+      showOverlay("Aprovando aposta...");
+      apostas[i].status='APROVADO';
       btn.textContent='✔️';
       btn.classList.add("done");
       atualizarIndices();renderGrafico();
-
-      await fetch(SCRIPT_URL,{
-        method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({...aposta,action:"atualizarStatus"})
-      });
-
+      await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({...apostas[i],action:"atualizarStatus"})});
       hideOverlay();
     });
   });
