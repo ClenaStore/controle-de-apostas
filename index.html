@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Painel de Apostas — Quem Matou Odete Roitman?</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --bg:#0b1220;--card:#0f172a;--ink:#e5f0ff;--muted:#a8b3c7;
+  --line:#243043;--teal:#06b6d4;--blue:#4f46e5;
+  --green:#16a34a;--red:#ef4444;--amber:#f59e0b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Inter,system-ui;
+  background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;font-smooth:always;
+}
+header{
+  text-align:center;padding:20px;
+  background:var(--card);border-bottom:2px solid var(--line);
+}
+header h1{color:var(--amber);margin:0;font-size:28px}
+header p{color:var(--muted);margin:6px 0 0}
+main{padding:20px;max-width:1200px;margin:auto}
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;margin-bottom:30px;
+}
+.stat{
+  background:var(--card);padding:16px;border-radius:14px;
+  text-align:center;border:1px solid var(--line);
+}
+.stat h3{margin:0;color:var(--muted);font-size:14px}
+.stat .val{font-size:24px;font-weight:800;margin-top:8px;color:var(--amber)}
+.table-box{
+  background:var(--card);border-radius:14px;padding:16px;
+  border:1px solid var(--line);overflow:auto;
+}
+table{width:100%;border-collapse:collapse;color:var(--ink)}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-size:13px;text-transform:uppercase}
+td small{color:var(--muted);font-size:12px}
+.aprovado{
+  background:var(--green);color:#fff;border:none;
+  padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;
+}
+.aprovado.done{background:#1e293b;color:var(--muted);cursor:default}
+.chart-box{
+  background:var(--card);padding:16px;border-radius:14px;
+  border:1px solid var(--line);margin-top:30px;
+}
+@media(max-width:768px){
+  header h1{font-size:22px}
+  .stat .val{font-size:20px}
+  th,td{font-size:13px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Quem Matou Odete Roitman?</h1>
+  <p>Painel de Controle e Análise de Apostas</p>
+</header>
+<main>
+  <section class="stats">
+    <div class="stat"><h3>Total de Apostas</h3><div class="val" id="totalApostas">0</div></div>
+    <div class="stat"><h3>Valor Arrecadado</h3><div class="val" id="valorArrecadado">R$ 0,00</div></div>
+    <div class="stat"><h3>Prêmio (75%)</h3><div class="val" id="premio">R$ 0,00</div></div>
+    <div class="stat"><h3>Lucro (25%)</h3><div class="val" id="lucro">R$ 0,00</div></div>
+  </section>
+
+  <section class="table-box">
+    <h2 style="color:var(--amber);margin-top:0;">📋 Apostas Registradas</h2>
+    <table id="tabelaApostas">
+      <thead>
+        <tr>
+          <th>Nome</th><th>Suspeito</th><th>Cotas</th><th>Valor</th><th>Status</th><th>Ação</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="chart-box">
+    <h2 style="color:var(--amber);margin-top:0;">📊 Apostas por Suspeito</h2>
+    <canvas id="chartApostas" height="120"></canvas>
+  </section>
+</main>
+
+<script>
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxaTo1yxg3EoyDoQS0Vx8JnjCgGvnwJb7PCRdQ2f1nFgGQgznT1voOriPSJOaXWHWwI/exec";
+const PRECO=5;
+let apostas=[];
+
+// Função para formatar valores monetários
+const fmt=v=>"R$ "+Number(v).toFixed(2).replace('.',',');
+
+// Atualiza os indicadores de topo
+function atualizarIndices(){
+  const totalApostas=apostas.length;
+  const valorTotal=apostas.reduce((t,a)=>t+a.qtd*PRECO,0);
+  const premio=valorTotal*0.75; // 75% do total é prêmio
+  const lucro=valorTotal*0.25;  // 25% é lucro
+
+  document.getElementById("totalApostas").textContent=totalApostas;
+  document.getElementById("valorArrecadado").textContent=fmt(valorTotal);
+  document.getElementById("premio").textContent=fmt(premio);
+  document.getElementById("lucro").textContent=fmt(lucro);
+}
+
+// Renderiza tabela
+function renderTabela(){
+  const tbody=document.querySelector("#tabelaApostas tbody");
+  tbody.innerHTML="";
+  apostas.forEach((a,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${a.nome}</td>
+      <td>${a.foto}</td>
+      <td>${a.qtd}</td>
+      <td>${fmt(a.qtd*PRECO)}</td>
+      <td>${a.status}</td>
+      <td><button class="aprovado ${a.status==='APROVADO'?'done':''}" data-i="${i}">${a.status==='APROVADO'?'✔️':'Aprovar'}</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll(".aprovado").forEach(btn=>{
+    btn.addEventListener("click",async()=>{
+      const i=btn.dataset.i;
+      if(apostas[i].status==='APROVADO')return;
+      apostas[i].status='APROVADO';
+      btn.textContent='✔️';
+      btn.classList.add("done");
+      atualizarIndices();renderGrafico();
+      // Atualiza planilha
+      fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({...apostas[i],action:"atualizarStatus"})});
+    });
+  });
+}
+
+// Renderiza gráfico de apostas
+let chart;
+function renderGrafico(){
+  const ctx=document.getElementById("chartApostas").getContext("2d");
+  const contagem={};
+  apostas.forEach(a=>{
+    contagem[a.foto]=(contagem[a.foto]||0)+a.qtd;
+  });
+  const labels=Object.keys(contagem);
+  const data=Object.values(contagem);
+  if(chart)chart.destroy();
+  chart=new Chart(ctx,{
+    type:"bar",
+    data:{labels,datasets:[{label:"Cotas Apostadas",data,borderWidth:1,backgroundColor:"#f59e0b"}]},
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{color:var('--ink')},grid:{color:var('--line')}},x:{ticks:{color:var('--muted')}}}
+    }
+  });
+}
+
+// Carrega apostas da planilha
+async function carregar(){
+  try{
+    const r=await fetch(`${SCRIPT_URL}?action=listar`,{cache:"no-store"});
+    const j=await r.json();
+    apostas=j.map(l=>({
+      nome:l.nome,
+      foto:l.foto,
+      qtd:Number(l.qtd),
+      status:l.status
+    }));
+    atualizarIndices();
+    renderTabela();
+    renderGrafico();
+  }catch(e){
+    console.error(e);
+  }
+}
+carregar();
+</script>
+</body>
+</html>
