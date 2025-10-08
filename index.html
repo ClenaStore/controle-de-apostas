@@ -38,7 +38,7 @@ main{padding:20px;max-width:1200px;margin:auto}
   background:var(--card);border-radius:14px;padding:16px;
   border:1px solid var(--line);overflow-x:auto;
 }
-.table-box table{min-width:800px;border-collapse:collapse;color:var(--ink);font-size:14px;}
+.table-box table{min-width:900px;border-collapse:collapse;color:var(--ink);font-size:14px;}
 th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;}
 th{color:var(--muted);font-size:13px;text-transform:uppercase;background:#111827;position:sticky;top:0;z-index:1;}
 td small{color:var(--muted);font-size:12px}
@@ -48,6 +48,7 @@ td small{color:var(--muted);font-size:12px}
 .aprovar.done{background:#1e293b;color:var(--muted);}
 .reenviar{background:var(--blue);color:#fff;margin-left:6px;}
 .reenviar.sent{background:#1e293b;color:var(--muted);}
+.whats{background:#25D366;color:#fff;margin-left:6px;}
 
 /* ===== GRAFICO ===== */
 .chart-box{background:var(--card);padding:16px;border-radius:14px;border:1px solid var(--line);margin-top:30px;}
@@ -96,7 +97,7 @@ td small{color:var(--muted);font-size:12px}
       <thead>
         <tr>
           <th>Nome</th>
-          <th>E-mail</th>
+          <th>Telefone</th>
           <th>Suspeito</th>
           <th>Cotas</th>
           <th>Valor</th>
@@ -115,17 +116,14 @@ td small{color:var(--muted);font-size:12px}
 </main>
 
 <script>
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbw6ffyPNYEZqbRLo-ov7maEciyqw-4QZggFw5dVqJal-qsC6gs-Go2k4v8kHh4aHgs5/exec";  // substitua pelo link do GAS implantado
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbw6ffyPNYEZqbRLo-ov7maEciyqw-4QZggFw5dVqJal-qsC6gs-Go2k4v8kHh4aHgs5/exec";
 const PRECO=5;
 let apostas=[];
 const overlay=document.getElementById("overlay");
-
-function showOverlay(msg="Carregando..."){
-  overlay.style.display="flex";
-  overlay.querySelector("p").textContent=msg;
-}
-function hideOverlay(){overlay.style.display="none";}
 const fmt=v=>"R$ "+Number(v).toFixed(2).replace('.',',');
+
+function showOverlay(msg="Carregando..."){overlay.style.display="flex";overlay.querySelector("p").textContent=msg;}
+function hideOverlay(){overlay.style.display="none";}
 
 /* ===== INDICADORES ===== */
 function atualizarIndices(){
@@ -143,14 +141,19 @@ function renderTabela(){
   tbody.innerHTML="";
   apostas.forEach((a,i)=>{
     const tr=document.createElement("tr");
+    const valorTotal=a.qtd*PRECO;
+    const telefone=a.telefone.replace(/\D/g,'');
+    const msg=`🎟️ *Resumo da sua aposta*\n\n👤 *${a.nome}*\n🎯 Suspeito: *${a.foto}*\n📦 Cotas: *${a.qtd}*\n💰 Valor Total: *${fmt(valorTotal)}*\n\nAgradecemos por participar do bolão! 🍀`;
+    const linkWhats=`https://wa.me/55${telefone}?text=${encodeURIComponent(msg)}`;
     tr.innerHTML=`
       <td>${a.nome}</td>
-      <td>${a.email||'-'}</td>
+      <td>${a.telefone}</td>
       <td>${a.foto}</td>
       <td>${a.qtd}</td>
-      <td>${fmt(a.qtd*PRECO)}</td>
+      <td>${fmt(valorTotal)}</td>
       <td>${a.status}</td>
       <td>
+        <button class="btn whats" onclick="window.open('${linkWhats}','_blank')">📲 WhatsApp</button>
         <button class="btn aprovar ${a.status==='APROVADO'?'done':''}" data-i="${i}">
           ${a.status==='APROVADO'?'✔️':'Aprovar'}
         </button>
@@ -159,7 +162,7 @@ function renderTabela(){
     tbody.appendChild(tr);
   });
 
-  /* === Botões Aprovar === */
+  /* === Aprovar === */
   document.querySelectorAll(".aprovar").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const i=btn.dataset.i;
@@ -178,7 +181,7 @@ function renderTabela(){
     });
   });
 
-  /* === Botões Reenviar === */
+  /* === Reenviar === */
   document.querySelectorAll(".reenviar").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const i=btn.dataset.i;
