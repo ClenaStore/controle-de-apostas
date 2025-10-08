@@ -168,15 +168,17 @@ const fmt=v=>"R$ "+Number(v).toFixed(2).replace('.',',');
 function showOverlay(msg="Carregando..."){overlay.style.display="flex";overlay.querySelector("p").textContent=msg;}
 function hideOverlay(){overlay.style.display="none";}
 
-/* ===== INDICADORES ===== */
 function atualizarIndices(){
-  const totalApostas=apostas.length;
-  const valorTotal=apostas.reduce((t,a)=>t+a.qtd*PRECO,0);
-  document.getElementById("totalApostas").textContent=totalApostas;
-  document.getElementById("valorArrecadado").textContent=fmt(valorTotal);
-  document.getElementById("premio").textContent=fmt(valorTotal*0.75);
-  document.getElementById("lucro").textContent=fmt(valorTotal*0.25);
+  const aprovadas = apostas.filter(a => a.status === "APROVADO");
+  const totalApostas = aprovadas.length;
+  const valorTotal = aprovadas.reduce((t, a) => t + a.qtd * PRECO, 0);
+
+  document.getElementById("totalApostas").textContent = totalApostas;
+  document.getElementById("valorArrecadado").textContent = fmt(valorTotal);
+  document.getElementById("premio").textContent = fmt(valorTotal * 0.75);
+  document.getElementById("lucro").textContent = fmt(valorTotal * 0.25);
 }
+
 
 /* ===== RESULTADOS ===== */
 function renderResultados(ganhadores){
