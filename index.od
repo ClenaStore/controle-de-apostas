@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎰 Painel de Controle - Apostas</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#060818;--bg2:#0a0f2c;--panel:#0f172a;
+  --line:#1e2a3f;--ink:#eaf2ff;--muted:#a7b3c8;
+  --accent:#00e5ff;--accent2:#7c3aed;--warn:#f59e0b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Inter,system-ui;
+  background:radial-gradient(900px 700px at 50% -150px,var(--bg2),#020412 75%);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding:20px;
+}
+
+/* ===== Header ===== */
+header{text-align:center;margin-bottom:30px}
+h1{font-family:Orbitron;color:var(--warn);font-size:28px;text-shadow:0 0 12px rgba(245,158,11,.5)}
+.sub{color:var(--muted);font-size:15px}
+
+/* ===== Grid de Cards ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:20px;
+  width:100%;
+  max-width:900px;
+}
+.card{
+  background:linear-gradient(180deg,var(--panel),#0a0f1f);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:20px;
+  cursor:pointer;
+  transition:.25s;
+  text-align:center;
+  box-shadow:0 0 25px rgba(0,229,255,.08);
+}
+.card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 8px 22px rgba(0,229,255,.2);
+}
+.card img{
+  width:80px;height:80px;object-fit:contain;margin-bottom:15px;
+  filter:drop-shadow(0 0 8px rgba(0,229,255,.3));
+}
+.card h3{
+  color:var(--accent);
+  font-family:Orbitron;
+  margin-bottom:8px;
+  font-size:20px;
+}
+.card p{color:var(--muted);font-size:14px}
+
+/* ===== Responsivo ===== */
+@media(max-width:600px){
+  h1{font-size:24px}
+  .card img{width:70px;height:70px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎰 Painel de Apostas</h1>
+  <p class="sub">Selecione uma categoria para gerenciar</p>
+</header>
+
+<div class="grid">
+  <div class="card" onclick="abrir('index.html')">
+    <img src="https://cdn-icons-png.flaticon.com/512/3756/3756707.png" alt="Jogo do Bicho">
+    <h3>Jogo do Bicho</h3>
+    <p>Acompanhe e gerencie as apostas</p>
+  </div>
+
+  <div class="card" onclick="abrir('relatorios.html')">
+    <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" alt="Relatórios">
+    <h3>Relatórios</h3>
+    <p>Visualize os resultados e estatísticas</p>
+  </div>
+
+  <div class="card" onclick="abrir('cadastros.html')">
+    <img src="https://cdn-icons-png.flaticon.com/512/9068/9068642.png" alt="Cadastros">
+    <h3>Cadastros</h3>
+    <p>Gerencie jogadores e apostas</p>
+  </div>
+</div>
+
+<script>
+function abrir(pagina){
+  window.location.href = pagina; // abre na mesma aba
+}
+</script>
+
+</body>
+</html>
