@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🎟️ Painel da Rifa Solidária</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05091b;--card:#0f172a;--line:#1f2f49;
+  --ink:#eaf2ff;--muted:#94a3b8;
+  --accent:#00e5ff;--ok:#16a34a;--warn:#f59e0b;
+  --bad:#ef4444;--info:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',system-ui}
+body{
+  background:radial-gradient(circle at top,#0b132c,#020510 80%);
+  color:var(--ink);
+  min-height:100vh;
+  padding:12px;
+}
+header{text-align:center;margin-bottom:16px;}
+header h1{
+  font-family:'Orbitron',sans-serif;
+  color:var(--accent);
+  text-shadow:0 0 10px var(--accent);
+  font-size:1.6rem;margin-bottom:10px;
+}
+button{
+  cursor:pointer;border:none;border-radius:8px;font-weight:600;transition:.2s;
+}
+.refresh{
+  background:linear-gradient(90deg,#00e5ff,#9333ea);
+  color:#fff;padding:8px 18px;
+  box-shadow:0 0 10px rgba(0,229,255,.5);
+}
+.refresh:hover{filter:brightness(1.1)}
+.msg{text-align:center;margin:10px 0;font-weight:600;}
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:10px;margin-bottom:16px;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  text-align:center;
+  box-shadow:0 0 10px rgba(0,0,0,.3);
+}
+.card h3{font-size:1rem;color:var(--muted)}
+.card span{font-weight:700;font-size:1.3rem}
+.list{display:flex;flex-direction:column;gap:12px;}
+.item{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:0 0 10px rgba(0,0,0,.4);
+  padding:14px;
+  position:relative;
+  animation:fadeIn .3s ease-in-out;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.nome{font-size:1rem;font-weight:600;color:var(--accent)}
+.numeros{font-size:.9rem;color:var(--muted);margin-top:3px}
+.valor{font-size:1rem;font-weight:700;color:#7af59a;margin-top:6px}
+.status{
+  padding:4px 8px;border-radius:6px;
+  font-weight:700;font-size:0.8rem;
+  text-transform:uppercase;display:inline-block;margin-top:8px;
+}
+.RESERVADO{background:#312d16;color:var(--warn)}
+.PAGO{background:#102d1d;color:var(--ok)}
+.CANCELADO{background:#3b1c1c;color:var(--bad)}
+.ENTREGUE{background:#132d40;color:var(--info)}
+
+.btn-whats{
+  background:linear-gradient(90deg,#25D366,#128C7E);
+  color:#fff;font-weight:600;
+  border-radius:8px;padding:8px 10px;
+  display:flex;align-items:center;gap:5px;
+  font-size:.9rem;justify-content:center;
+  margin-top:10px;
+}
+.btn-whats:hover{filter:brightness(1.1)}
+
+.menu-status{
+  position:absolute;bottom:12px;right:12px;
+  background:#102040;border:1px solid #1f2f49;
+  border-radius:50%;width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:bold;font-size:18px;
+  cursor:pointer;box-shadow:0 0 10px rgba(0,229,255,.3);
+}
+.menu-options{
+  position:absolute;bottom:60px;right:12px;
+  background:#0b1222;border:1px solid #1f2f49;
+  border-radius:10px;padding:6px;
+  display:none;flex-direction:column;gap:6px;
+}
+.menu-options button{
+  padding:8px;border:none;border-radius:6px;
+  color:#fff;font-size:0.8rem;font-weight:600;cursor:pointer;
+}
+.menu-options button.ok{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.menu-options button.warn{background:linear-gradient(90deg,#f59e0b,#facc15);color:#111}
+.menu-options button.bad{background:linear-gradient(90deg,#dc2626,#ef4444)}
+footer{text-align:center;color:var(--muted);margin-top:20px;font-size:0.8rem}
+@media (max-width:600px){
+  .item{padding:12px;}
+  header h1{font-size:1.3rem}
+  .card span{font-size:1.1rem}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎟️ Painel da Rifa Solidária</h1>
+  <button class="refresh" onclick="load()">🔄 Atualizar Lista</button>
+</header>
+
+<div id="msg" class="msg"></div>
+<section id="cards" class="cards"></section>
+<section id="lista" class="list"><div style="text-align:center;">⏳ Carregando...</div></section>
+
+<footer>© 2025 Rifa Solidária • Painel Mobile</footer>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYSizHVpqN_tB-p-ufIpTj2HsE3443pCDnw4PtiydXfWp6XCZdshvNpLpvy4A01IJ2ug/exec";
+let DATA = [];
+
+function toast(msg, error=false){
+  const el=document.getElementById("msg");
+  el.style.color=error?"#ff6b81":"#7af59a";
+  el.textContent=msg;
+  if(msg)setTimeout(()=>el.textContent="",2500);
+}
+
+function jsonp(url){
+  return new Promise((resolve,reject)=>{
+    const cb="cb_"+Math.random().toString(36).slice(2);
+    window[cb]=(payload)=>{resolve(payload);cleanup();};
+    const s=document.createElement("script");
+    s.src=url+(url.includes("?")?"&":"?")+"callback="+cb;
+    s.onerror=()=>{reject(new Error("Erro JSONP"));cleanup();};
+    document.body.appendChild(s);
+    function cleanup(){try{delete window[cb]}catch{};s.remove();}
+  });
+}
+
+async function load(){
+  document.getElementById("lista").innerHTML="<div style='text-align:center;'>⏳ Carregando...</div>";
+  try{
+    const dados=await jsonp(`${SCRIPT_URL}?action=list`);
+    if(!Array.isArray(dados)) throw new Error("Formato inválido");
+    DATA=dados;
+    renderCards(dados);
+    renderList(dados);
+    toast("✅ Atualizado");
+  }catch(e){
+    toast(e.message,true);
+    document.getElementById("lista").innerHTML="<div style='text-align:center;'>❌ Erro ao carregar</div>";
+  }
+}
+
+function renderCards(rows){
+  const total=rows.length;
+  const pagos=rows.filter(r=>r.status==="PAGO").length;
+  const reserv=rows.filter(r=>r.status==="RESERVADO").length;
+  const cancel=rows.filter(r=>r.status==="CANCELADO").length;
+  const entreg=rows.filter(r=>r.status==="ENTREGUE").length;
+  document.getElementById("cards").innerHTML=`
+    <div class="card"><h3>Total</h3><span style="color:var(--accent)">${total}</span></div>
+    <div class="card"><h3>Pagos</h3><span style="color:var(--ok)">${pagos}</span></div>
+    <div class="card"><h3>Reservados</h3><span style="color:var(--warn)">${reserv}</span></div>
+    <div class="card"><h3>Cancelados</h3><span style="color:var(--bad)">${cancel}</span></div>
+    <div class="card"><h3>Entregues</h3><span style="color:var(--info)">${entreg}</span></div>`;
+}
+
+function renderList(rows){
+  const list=document.getElementById("lista");
+  if(!rows.length){list.innerHTML="<div style='text-align:center;'>Nenhum registro</div>";return;}
+  list.innerHTML=rows.map(r=>{
+    const sClass=r.status?` ${r.status}`:"";
+    const nome=esc(r.nome);
+    const nums=esc(r.numeros);
+    const valor=esc(r.total);
+    const msg=`Olá ${nome}, segue o resumo da sua participação na Rifa Solidária:%0A🎟️ Números: ${nums}%0A💰 Valor: R$ ${valor}%0AObrigado e boa sorte! 🍀`;
+    const tel=formatarTelefone(r.telefone);
+    const linkWhats=`https://wa.me/${tel}?text=${msg}`;
+    return `
+    <div class="item" id="r${r.rowNumber}">
+      <div class="nome">${nome}</div>
+      <div class="numeros">🎟️ ${nums}</div>
+      <div class="valor">💰 R$ ${valor}</div>
+      <span class="status${sClass}">${esc(r.status)}</span>
+      <a class="btn-whats" href="${linkWhats}" target="_blank">WhatsApp</a>
+      <div class="menu-status" onclick="toggleMenu(this)">⚙️</div>
+      <div class="menu-options">
+        <button class="ok" onclick="atualizarStatus(${r.rowNumber},'PAGO')">Pago</button>
+        <button class="bad" onclick="atualizarStatus(${r.rowNumber},'CANCELADO')">Cancelar</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggleMenu(el){
+  const menu=el.nextElementSibling;
+  menu.style.display=menu.style.display==="flex"?"none":"flex";
+}
+
+async function atualizarStatus(row,status){
+  const card=document.getElementById(`r${row}`);
+  try{
+    const res=await jsonp(`${SCRIPT_URL}?action=update&row=${row}&status=${encodeURIComponent(status)}`);
+    if(res.ok){
+      const span=card.querySelector(".status");
+      span.className="status "+status;
+      span.textContent=status;
+      card.querySelector(".menu-options").style.display="none";
+      toast("✅ Atualizado");
+    } else toast("❌ Falha: "+(res.error||"Erro"),true);
+  }catch(e){toast(e.message,true);}
+}
+
+function esc(s){return String(s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));}
+function formatarTelefone(tel){return tel.replace(/\D/g,'').replace(/^0+/,'').replace(/^55/,'55');}
+
+load();
+</script>
+</body>
+</html>
